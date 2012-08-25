@@ -1,24 +1,30 @@
 #include <Wire.h>
 
-void wireWrite(char address, char registerAddress, char data) {
-  Wire.beginTransmission(address);
+/*
+ * Writes 'data' to 'registerAddress' of I2C device with address 'deviceAddress'
+ */
+void wireWrite(char deviceAddress, char registerAddress, byte data) {
+  Wire.beginTransmission(deviceAddress);
   Wire.send(registerAddress);
   Wire.send(data);
   Wire.endTransmission();
 }
 
-unsigned char wireRead(char address, char registerAddress)  {
-  unsigned char data = 0;
-  Wire.beginTransmission(address);
+/*
+ * Reads 'numBytes' bytes from I2C device with address 'deviceAddress' from register 'registerAddress'
+ * and puts result in 'result'
+ */
+void wireRead(byte deviceAddress, byte registerAddress, int numBytes, byte result[]) {
+  Wire.beginTransmission(deviceAddress);
   Wire.send(registerAddress);
-  #define NUM_BYTES 1
-  Wire.requestFrom(address, NUM_BYTES);
-  
-  if(Wire.available()) {
-    data = Wire.receive();
-  }
-
   Wire.endTransmission();
+
+  Wire.requestFrom((int)deviceAddress, numBytes);
+
+  int i = 0;
   
-  return data;
+  while(Wire.available()) {
+    result[i] = Wire.receive();
+    i++;
+  }
 }
