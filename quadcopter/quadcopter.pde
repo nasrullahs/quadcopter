@@ -46,8 +46,8 @@ void setup() {
 void loop() {
   float gyroResult[3];
   float accelResult[3];
-  getAnglesFromGyro(gyroResult);
   getAnglesFromAccel(accelResult);
+  getAnglesFromGyro(gyroResult);
   Serial.print(gyroResult[0]);
   Serial.print(", ");
   Serial.print(accelResult[0]);
@@ -57,6 +57,8 @@ void loop() {
   Serial.print(accelResult[1]);
   Serial.print(",\t\t");
   Serial.println(gyroResult[2]);
+  //Serial.print(", ");
+  //Serial.println(accelResult[2]);
   
   delay(100);
 //  int counter = 0;
