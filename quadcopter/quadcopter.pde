@@ -1,6 +1,7 @@
 #include <Servo.h>
 #include <Wire.h>
 
+//will go away
 #define ERRORS_LENGTH 15
 
 #define MOTOR_FRONT_RIGHT 0
@@ -9,8 +10,36 @@
 #define MOTOR_REAR_LEFT 3
 
 Servo motors[4];
-int errors[ERRORS_LENGTH];
-int head = 0;
+int errors[ERRORS_LENGTH];//will go away
+int head = 0;//will go away
+
+/*
+ * Angles of rotation calculated by integrating gyro result
+ */
+float gyroAngle[3] = {0, 0, 0};
+
+//Variables for kalman filter
+float Pxx = 0.1; // angle variance
+float Pvv = 0.1; // angle change rate variance
+float Pxv = 0.1; // angle and angle change rate covariance
+float kx, kv;
+float gyroVar = 0.1;
+float deltaGyroVar = 0.1;
+float accelVar = 5;
+
+/*
+ * Time (in microseconds, since program started running, read from arduino micros() function)
+ * at which last reading was taken.
+ */
+unsigned long lastReadingTime = 0;
+/*
+ * Time (in microseconds) between last and second last readings. Used for integrating gyro result.
+ */
+unsigned long timeDelta = 0;
+
+/*
+ * NOTE: the arduino micros() function is used for timing, and it overflows after approximately 70 minutes
+ */
 
 void setup() {
   //for debugging
@@ -34,31 +63,49 @@ void setup() {
   setSpeed(MOTOR_REAR_RIGHT, 0);
   setSpeed(MOTOR_REAR_LEFT, 0);
   delay(2000);
-  
-  
-  for(int i=0; i<3; i++) {
-    float buffer[3];
-    readGyro(buffer);
-  }
 }
 
 
 void loop() {
-  float gyroResult[3];
-  float accelResult[3];
-  getAnglesFromAccel(accelResult);
-  getAnglesFromGyro(gyroResult);
-  Serial.print(gyroResult[0]);
-  Serial.print(", ");
-  Serial.print(accelResult[0]);
+  float accelAngle[2];
+  float prediction[2];
+  float gyroRotation[3];
+  
+  timeDelta = micros() - lastReadingTime;
+  lastReadingTime = micros();
+  
+  getAnglesFromAccel(accelAngle);
+  readGyro(gyroRotation);
+  
+  gyroAngle[0] += gyroRotation[0] * timeDelta / 1000000.0;
+  gyroAngle[1] += gyroRotation[1] * timeDelta / 1000000.0;
+  gyroAngle[2] += gyroRotation[2] * timeDelta / 1000000.0;
+  
+  prediction[0] += gyroRotation[0] * timeDelta / 1000000.0;
+  prediction[1] += gyroRotation[1] * timeDelta / 1000000.0;
+  
+  /*
+   * NOTE:
+   * I still do not understand how kalman filters work, I just copied some
+   * code from http://www.den-uijl.nl/electronics/gyro.html
+   */
+  Pxx += timeDelta * (2 * Pxv + timeDelta * Pvv);
+  Pxv += timeDelta * Pvv;
+  Pxx += timeDelta * gyroVar;
+  Pvv += timeDelta * deltaGyroVar;
+  kx = Pxx * (1 / (Pxx + accelVar));
+  kv = Pxv * (1 / (Pxx + accelVar));
+  
+  prediction[0] += (accelAngle[0] - prediction[0]) * kx;
+  prediction[1] += (accelAngle[1] - prediction[1]) * kx;
+  
+  Pxx *= (1 - kx);
+  Pxv *= (1 - kx);
+  Pvv -= kv * Pxv;
+  
+  Serial.print(prediction[0]);
   Serial.print(",\t\t");
-  Serial.print(gyroResult[1]);
-  Serial.print(", ");
-  Serial.print(accelResult[1]);
-  Serial.print(",\t\t");
-  Serial.println(gyroResult[2]);
-  //Serial.print(", ");
-  //Serial.println(accelResult[2]);
+  Serial.println(prediction[1]);
   
   delay(100);
 //  int counter = 0;
