@@ -1,11 +1,10 @@
-#include <Wire.h>
-
 #define ACCELEROMETER_ADDRESS 0x40
 
 float accelBias[3] = {0, 0, 0};
 #define ACCEL_SCALE 4095.5
 
-void initAccelerometer() {
+void initAccelerometer()
+{
   #define ADDR_OFFSET_LSB1 0x35
   #define RANGE_2_G B0100
   wireWrite(ACCELEROMETER_ADDRESS, ADDR_OFFSET_LSB1, RANGE_2_G);
@@ -38,7 +37,8 @@ void initAccelerometer() {
  * Reads accelerometer and calculates angles of rotation about x and y axes (in degrees). Puts result in 'result'
  * 'result' must be of size 2
  */
-void getAnglesFromAccel(float result[]) {
+void getAnglesFromAccel(float result[])
+{
   float acceleration[3];
   readAccelerometer(acceleration);
   
@@ -50,7 +50,8 @@ void getAnglesFromAccel(float result[]) {
  * Reads accelerometer x, y, and z values, converts them to g's, and puts them into 'result'
  * 'result' must be of size 3
  */
-void readAccelerometer(float result[]) {
+void readAccelerometer(float result[])
+{
   int accelReading[3];
   getAccelRawReading(accelReading);
   
@@ -60,7 +61,8 @@ void readAccelerometer(float result[]) {
 }
 
 
-void getAccelRawReading(int result[]) {
+void getAccelRawReading(int result[])
+{
   #define ADDR_ACC_X_LSB 0x02
   byte buffer[6];
   wireRead(ACCELEROMETER_ADDRESS, ADDR_ACC_X_LSB, 6, buffer);
@@ -70,7 +72,8 @@ void getAccelRawReading(int result[]) {
   result[2] = combine(buffer[4], buffer[5]);
 }
 
-int combine(int low, int high) {
+int combine(int low, int high)
+{
   int result = high << 8 | low;
   result = result >> 2;
   return result;
