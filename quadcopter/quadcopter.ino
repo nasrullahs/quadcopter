@@ -124,14 +124,14 @@ void loop()
     
     
     //trying PID controller for stabilizing only about X axis
-    #define GAIN_PROPORTIONAL 0.08
+    #define GAIN_PROPORTIONAL 0.17
     float proportional = rotation[0] * GAIN_PROPORTIONAL;
     
-    angleIntegral[1] += rotation[0] * timeDelta;
-    #define GAIN_INTEGRAL 0.1
-    float integral = rotation[0] * GAIN_INTEGRAL;
+    angleIntegral[0] += rotation[0] * timeDelta;
+    #define GAIN_INTEGRAL 0.015
+    float integral = angleIntegral[0] * GAIN_INTEGRAL;
     
-    #define GAIN_DERIVATIVE 0.02
+    #define GAIN_DERIVATIVE 0.022
     float derivative = rotation_derivative[0] * GAIN_DERIVATIVE;
     
     float output = proportional + integral + derivative;
