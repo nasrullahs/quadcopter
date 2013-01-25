@@ -10,8 +10,10 @@
 /*
  * Whether or not motors should be on
  */
-boolean go = false;
+boolean powerOn = false;
 int baseSpeed = 0;
+
+int desired_angle[2] = {0, 0};
 
 Servo motors[4];
 
@@ -42,7 +44,7 @@ float anglePrediction[2];
 /*
  * Integral of angle for "integral" component of PID controller
  */
-float angleIntegral[2] = {0, 0};
+float error_integral[2] = {0, 0};
 
 /*
  * NOTE: the arduino micros() function is used for timing, and it overflows after approximately 70 minutes
@@ -71,14 +73,14 @@ void setup()
 
 void loop()
 {
-  if(go)
+  if(powerOn)
   {
     float accelAngle[2];
     float gyroRotation[3];
     
     float timeDelta = (float)(micros() - lastReadingTime) / 1000000.0;
     if(lastReadingTime == 0) {
-      //timeDelta = 0;
+      timeDelta = 0;
     }
     
     lastReadingTime = micros();
@@ -94,7 +96,7 @@ void loop()
     anglePrediction[1] += gyroRotation[1] * timeDelta;
     
     /*
-     * algorithm from http://www.den-uijl.nl/electronics/gyro.html
+     * Kalman filter algorithm from http://www.den-uijl.nl/electronics/gyro.html
      */
     Pxx += timeDelta * (2 * Pxv + timeDelta * Pvv);
     Pxv += timeDelta * Pvv;
@@ -123,33 +125,30 @@ void loop()
     rotation_derivative[1] = gyroRotation[0] * sin(PI / 4.0) - gyroRotation[1] * cos(PI / 4.0);
     
     
-    //trying PID controller for stabilizing only about X axis
-    #define GAIN_PROPORTIONAL 0.17
-    float proportional = rotation[0] * GAIN_PROPORTIONAL;
+    /*
+     * PID controller
+     */
+    float error[2];
+    error[0] = rotation[0] - desired_angle[0];
     
-    angleIntegral[0] += rotation[0] * timeDelta;
+    float proportional[2], integral[2], derivative[2];
+    int output[2];
+    
+    #define GAIN_PROPORTIONAL 0.17
+    proportional[0] = error[0] * GAIN_PROPORTIONAL;
+    
+    error_integral[0] += error[0] * timeDelta;
     #define GAIN_INTEGRAL 0.015
-    float integral = angleIntegral[0] * GAIN_INTEGRAL;
+    integral[0] = error_integral[0] * GAIN_INTEGRAL;
     
     #define GAIN_DERIVATIVE 0.022
-    float derivative = rotation_derivative[0] * GAIN_DERIVATIVE;
+    derivative[0] = rotation_derivative[0] * GAIN_DERIVATIVE;
     
-    float output = proportional + integral + derivative;
-    
-//    Serial.print("rotation ");
-//    Serial.print(rotation[0]);
-//    Serial.print("\t\tproportional ");
-//    Serial.print(proportional);
-//    Serial.print(",\t\tintegral ");
-//    Serial.print(integral);
-//    Serial.print(",\t\tderivative ");
-//    Serial.print(derivative);
-//    Serial.print(",\t\ttotal ");
-//    Serial.println(output);
+    output[0] = proportional[0] + integral[0] + derivative[0];
     
     setSpeed(MOTOR_FRONT, 0);
-    setSpeed(MOTOR_LEFT, baseSpeed + output);
-    setSpeed(MOTOR_RIGHT, baseSpeed - output);
+    setSpeed(MOTOR_LEFT, baseSpeed + output[0]);
+    setSpeed(MOTOR_RIGHT, baseSpeed - output[0]);
     setSpeed(MOTOR_REAR, 0);
   }
   else
@@ -163,8 +162,12 @@ void loop()
 
 void serialEvent()
 {
-  go = (Serial.read() == '1');
-  baseSpeed = Serial.read();
+  char input[3] = {0, 0, 0};
+  Serial.readBytes(input, 3);
+  
+  powerOn = (input[0] == '1');
+  baseSpeed = input[1];
+  desired_angle[0] = constrain(input[2], -35, 35);
 }
 
 void setSpeed(int motor, int speed)
@@ -172,3 +175,4 @@ void setSpeed(int motor, int speed)
   int fakeAngle = map(speed, 0, 100, 0, 180);
   motors[motor].write(fakeAngle);
 }
+
