@@ -130,26 +130,32 @@ void loop()
      */
     float error[2];
     error[0] = rotation[0] - desired_angle[0];
+    error[1] = rotation[1] - desired_angle[1];
     
     float proportional[2], integral[2], derivative[2];
     int output[2];
     
     #define GAIN_PROPORTIONAL 0.17
     proportional[0] = error[0] * GAIN_PROPORTIONAL;
+    proportional[1] = error[1] * GAIN_PROPORTIONAL;
     
     error_integral[0] += error[0] * timeDelta;
+    error_integral[1] += error[1] * timeDelta;
     #define GAIN_INTEGRAL 0.015
     integral[0] = error_integral[0] * GAIN_INTEGRAL;
+    integral[1] = error_integral[1] * GAIN_INTEGRAL;
     
     #define GAIN_DERIVATIVE 0.022
     derivative[0] = rotation_derivative[0] * GAIN_DERIVATIVE;
+    derivative[1] = rotation_derivative[1] * GAIN_DERIVATIVE;
     
     output[0] = proportional[0] + integral[0] + derivative[0];
+    output[1] = proportional[1] + integral[1] + derivative[1];
     
-    setSpeed(MOTOR_FRONT, 0);
+    setSpeed(MOTOR_FRONT, baseSpeed + output[1]);
+    setSpeed(MOTOR_REAR, baseSpeed - output[1]);
     setSpeed(MOTOR_LEFT, baseSpeed + output[0]);
     setSpeed(MOTOR_RIGHT, baseSpeed - output[0]);
-    setSpeed(MOTOR_REAR, 0);
   }
   else
   {
@@ -162,12 +168,13 @@ void loop()
 
 void serialEvent()
 {
-  char input[3] = {0, 0, 0};
-  Serial.readBytes(input, 3);
+  char input[4] = {0, 0, 0, 0};
+  Serial.readBytes(input, 4);
   
   powerOn = (input[0] == '1');
   baseSpeed = input[1];
   desired_angle[0] = constrain(input[2], -35, 35);
+  desired_angle[1] = constrain(input[3], -35, 35);
 }
 
 void setSpeed(int motor, int speed)
