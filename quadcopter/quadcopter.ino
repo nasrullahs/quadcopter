@@ -135,13 +135,13 @@ void loop()
     float proportional[2], integral[2], derivative[2];
     int output[2];
     
-    #define GAIN_PROPORTIONAL 0.17
+    #define GAIN_PROPORTIONAL 0.16
     proportional[0] = error[0] * GAIN_PROPORTIONAL;
     proportional[1] = error[1] * GAIN_PROPORTIONAL;
     
     error_integral[0] += error[0] * timeDelta;
     error_integral[1] += error[1] * timeDelta;
-    #define GAIN_INTEGRAL 0.015
+    #define GAIN_INTEGRAL 0.012
     integral[0] = error_integral[0] * GAIN_INTEGRAL;
     integral[1] = error_integral[1] * GAIN_INTEGRAL;
     
@@ -152,6 +152,12 @@ void loop()
     output[0] = proportional[0] + integral[0] + derivative[0];
     output[1] = proportional[1] + integral[1] + derivative[1];
     
+    //safety auto-off if angle gets too high
+    if(abs(rotation[0]) > 40 || abs(rotation[1]) > 40) {
+      powerOn = false;
+      return;
+    }
+    
     setSpeed(MOTOR_FRONT, baseSpeed + output[1]);
     setSpeed(MOTOR_REAR, baseSpeed - output[1]);
     setSpeed(MOTOR_LEFT, baseSpeed + output[0]);
@@ -160,12 +166,15 @@ void loop()
   else
   {
     setSpeed(MOTOR_FRONT, 0);
+    setSpeed(MOTOR_REAR, 0);
     setSpeed(MOTOR_LEFT, 0);
     setSpeed(MOTOR_RIGHT, 0);
-    setSpeed(MOTOR_REAR, 0);
+    
+    error_integral[0] = 0;
+    error_integral[1] = 0;
   }
 }
-
+ 
 void serialEvent()
 {
   char input[4] = {0, 0, 0, 0};
