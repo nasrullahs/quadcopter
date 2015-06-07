@@ -12,25 +12,6 @@ void initAccelerometer()
   #define ADDR_BW_TCS 0x20
   #define FILTER_BW_1200 B00000111
   wireWrite(ACCELEROMETER_ADDRESS, ADDR_BW_TCS, FILTER_BW_1200);
-  
-//  //calculate accelBias by averaging some values before motors are turned on
-//  int accelReadingsSum[3] = {0, 0, 0};
-//  
-//  #define NUM_READINGS 50
-//  for(int i=0; i<NUM_READINGS; i++) {
-//    int accelReading[3];
-//    getAccelRawReading(accelReading);
-//    
-//    accelReadingsSum[0] += accelReading[0];
-//    accelReadingsSum[1] += accelReading[1];
-//    accelReadingsSum[2] += accelReading[2] - ACCEL_SCALE;
-//    
-//    delay(50);
-//  }
-//  
-//  accelBias[0] = (float) accelReadingsSum[0] / (float) NUM_READINGS;
-//  accelBias[1] = (float) accelReadingsSum[1] / (float) NUM_READINGS;
-//  accelBias[2] = (float) accelReadingsSum[2] / (float) NUM_READINGS;
 }
 
 /*

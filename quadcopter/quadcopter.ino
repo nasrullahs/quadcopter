@@ -1,7 +1,6 @@
 #include <Servo.h>
 #include <Wire.h>
 
-
 #define MOTOR_FRONT 1
 #define MOTOR_RIGHT 0
 #define MOTOR_LEFT 3
@@ -68,6 +67,12 @@ void setup()
   setSpeed(MOTOR_RIGHT, 0);
   setSpeed(MOTOR_REAR, 0);
   delay(2000);
+
+  #if defined (DEBUG)
+
+  powerOn = true;
+
+  #endif
 }
 
 
@@ -135,31 +140,58 @@ void loop()
     float proportional[2], integral[2], derivative[2];
     int output[2];
     
-    #define GAIN_PROPORTIONAL 0.16
+    #define GAIN_PROPORTIONAL 0.04
     proportional[0] = error[0] * GAIN_PROPORTIONAL;
     proportional[1] = error[1] * GAIN_PROPORTIONAL;
     
     error_integral[0] += error[0] * timeDelta;
     error_integral[1] += error[1] * timeDelta;
-    #define GAIN_INTEGRAL 0.012
+    #define GAIN_INTEGRAL 0.0
     integral[0] = error_integral[0] * GAIN_INTEGRAL;
     integral[1] = error_integral[1] * GAIN_INTEGRAL;
     
-    #define GAIN_DERIVATIVE 0.022
+    #define GAIN_DERIVATIVE 0.0
     derivative[0] = rotation_derivative[0] * GAIN_DERIVATIVE;
     derivative[1] = rotation_derivative[1] * GAIN_DERIVATIVE;
     
     output[0] = proportional[0] + integral[0] + derivative[0];
     output[1] = proportional[1] + integral[1] + derivative[1];
     
-    //safety auto-off if angle gets too high
-    if(abs(rotation[0]) > 40 || abs(rotation[1]) > 40) {
-      powerOn = false;
-      return;
-    }
+//    //safety auto-off if angle gets too high
+//    #define MAX_ROTATION 35
+//    if(abs(rotation[0]) > MAX_ROTATION || abs(rotation[1]) > MAX_ROTATION) {
+//      powerOn = false;
+//      return;
+//    }
     
-    setSpeed(MOTOR_FRONT, baseSpeed + output[1]);
-    setSpeed(MOTOR_REAR, baseSpeed - output[1]);
+    #if defined (DEBUG)
+
+    Serial.print("predicted angles: ");
+    Serial.print(rotation[0], 1);
+    Serial.print(", ");
+    Serial.print(rotation[1], 1);
+    
+    Serial.print("\t\taccelerometer angles:");
+    Serial.print(accelAngle[0] * cos(PI / 4.0) + accelAngle[1] * sin(PI / 4.0), 1);
+    Serial.print(", ");
+    Serial.print(accelAngle[0] * sin(PI / 4.0) - accelAngle[1] * cos(PI / 4.0), 1);
+
+    Serial.print("\t\tPID outputs: ");
+    Serial.print(output[0]);
+    Serial.print(", ");
+    Serial.print(output[1]);
+
+    Serial.print("\t\tTime: ");
+    Serial.print(lastReadingTime);
+    Serial.print(", delta t: ");
+    Serial.print(timeDelta, 6);
+
+    Serial.println();
+
+    #endif
+
+    setSpeed(MOTOR_FRONT, 0); //baseSpeed + output[1]);
+    setSpeed(MOTOR_REAR, 0); //baseSpeed - output[1]);
     setSpeed(MOTOR_LEFT, baseSpeed + output[0]);
     setSpeed(MOTOR_RIGHT, baseSpeed - output[0]);
   }
@@ -188,6 +220,7 @@ void serialEvent()
 
 void setSpeed(int motor, int speed)
 {
+  speed = constrain(speed, 0, 100);
   int fakeAngle = map(speed, 0, 100, 0, 180);
   motors[motor].write(fakeAngle);
 }

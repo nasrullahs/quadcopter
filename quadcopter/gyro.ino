@@ -11,25 +11,6 @@ void initGyro()
   
   //wait for gyro to "spin up"
   delay(100);
-  
-//  //calculate gyroBias by averaging some values before motors are turned on
-//  int gyroReadingsSum[3] = {0, 0, 0};
-//  
-//  #define NUM_READINGS 50
-//  for(int i=0; i<NUM_READINGS; i++) {
-//    int gyroReading[3];
-//    getGyroRawReading(gyroReading);
-//    
-//    gyroReadingsSum[0] += gyroReading[0];
-//    gyroReadingsSum[1] += gyroReading[1];
-//    gyroReadingsSum[2] += gyroReading[2];
-//    
-//    delay(50);
-//  }
-//  
-//  gyroBias[0] = (float) gyroReadingsSum[0] / (float) NUM_READINGS;
-//  gyroBias[1] = (float) gyroReadingsSum[1] / (float) NUM_READINGS;
-//  gyroBias[2] = (float) gyroReadingsSum[2] / (float) NUM_READINGS;
 }
 
 /*
