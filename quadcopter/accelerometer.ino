@@ -5,13 +5,24 @@ float accelBias[3] = {0, 0, 0};
 
 void initAccelerometer()
 {
-  #define ADDR_OFFSET_LSB1 0x35
-  #define RANGE_2_G B0100
-  wireWrite(ACCELEROMETER_ADDRESS, ADDR_OFFSET_LSB1, RANGE_2_G);
+  byte buffer[1];
+  
+  //the ee_w bit must be set to write to configuration registers (not only for writing to EEPROM)
+  #define ADDR_CTRL_REG0 0x0D
+  #define EE_W_MASK B00010000
+  wireRead(ACCELEROMETER_ADDRESS, ADDR_CTRL_REG0, 1, buffer);
+  byte ctrl_reg0_value = buffer[0] | EE_W_MASK;
+  wireWrite(ACCELEROMETER_ADDRESS, ADDR_CTRL_REG0, ctrl_reg0_value);
   
   #define ADDR_BW_TCS 0x20
-  #define FILTER_BW_1200 B00000111
-  wireWrite(ACCELEROMETER_ADDRESS, ADDR_BW_TCS, FILTER_BW_1200);
+  #define BW_MASK B11110000
+  #define FILTER_BW_300 B01010000
+  wireRead(ACCELEROMETER_ADDRESS, ADDR_BW_TCS, 1, buffer);
+  byte bw_tcs_value = (buffer[0] & ~BW_MASK) | FILTER_BW_300;
+  wireWrite(ACCELEROMETER_ADDRESS, ADDR_BW_TCS, bw_tcs_value);
+  
+  ctrl_reg0_value = ctrl_reg0_value & ~EE_W_MASK;
+  wireWrite(ACCELEROMETER_ADDRESS, ADDR_CTRL_REG0, ctrl_reg0_value);
 }
 
 /*

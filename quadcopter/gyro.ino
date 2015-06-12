@@ -7,7 +7,9 @@ void initGyro()
 {
   #define ADDR_DLPF_FS 0x16
   #define SCALE_2000_DPS B00011000
-  wireWrite(GYRO_ADDRESS, ADDR_DLPF_FS, SCALE_2000_DPS);
+  #define DLPF_CFG B00000000
+  byte dlpf_fs_value = SCALE_2000_DPS | DLPF_CFG;
+  wireWrite(GYRO_ADDRESS, ADDR_DLPF_FS, dlpf_fs_value);
   
   //wait for gyro to "spin up"
   delay(100);
